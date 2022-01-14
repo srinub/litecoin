@@ -1,0 +1,32 @@
+properties([
+  parameters([
+    string(name: 'GIT_REPO', description: 'Litecoin Git Repo', defaultValue: 'https://github.com/srinub66/litecoin.git'),  
+    string(name: 'GIT_BRANCH', description: 'Branch to build and deploy Litecoin from', defaultValue: 'main'),
+    string(name: 'LITECOIN_VERSION', description: 'Litecoing Version', defaultValue: '0.18.1'),
+    string(name: 'DOCKER_IMAGE_NAME', description: 'Docker Image name', defaultValue: 'srinub66/litecoin')
+  ])
+])
+
+node() {
+    timestamps {
+
+        // def dockerRegistry = 'srinub66/litecoin'
+
+        stage('Checkout'){
+            git url: params.GIT_REPO, branch: params.GIT_BRANCH
+        }
+
+        stage('Docker Build'){
+            dockerImage = docker.build("${params.DOCKER_IMAGE_NAME}:${params.LITECOIN_VERSION}",'./Docker/')
+            // sh '''
+            // docker build -t ${params.DOCKER_IMAGE_NAME}:${params.LITECOIN_VERSION} --build-arg LITECOIN_VERSION=${params.LITECOIN_VERSION} .
+            // ''' 
+        }
+
+        stage('Docker Push'){
+            docker.withRegistry('','dockerhub-creds'){
+                dockerImage.push()
+            }
+        }
+    }
+}       
